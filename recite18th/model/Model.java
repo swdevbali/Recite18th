@@ -58,6 +58,12 @@ public class Model {
         this.pkFieldName = pkFieldName;
     }
 
+    /**
+     * here we go. 1st challenge : how to enforce data type restriction
+     * in insert/update query? How do we know that certain field require
+     * certain data type??? ^_^
+     * @param params
+     */
     public void update(Hashtable params) {
         String sql = "update `" + tableName + "` set ";
         Enumeration e;
@@ -67,13 +73,13 @@ public class Model {
         while (e.hasMoreElements()) {
             key = e.nextElement() + "";
             value = params.get(key) + "";
-            sql = sql + key + "='" + value + "'";
+            sql = sql + key + "='" + value.trim() + "'";
             if (e.hasMoreElements()) {
                 sql = sql + ",";
             }
         }
 
-        sql = sql + " where " + pkFieldName + "=" + pkFieldValue;
+        sql = sql + " where " + pkFieldName + "=" + pkFieldValue.trim();
         System.out.println(sql);
         Db.executeQuery(sql);
     }
@@ -97,7 +103,7 @@ public class Model {
         while (e.hasMoreElements()) {
             key = e.nextElement() + "";
             value = params.get(key) + "";
-            sql = sql + "'" + value + "'";
+            sql = sql + "'" + value.trim() + "'";
             if (e.hasMoreElements()) {
                 sql = sql + ",";
             }
