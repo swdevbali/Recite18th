@@ -1,6 +1,7 @@
 package recite18th.controller;
 
 import application.config.Config;
+import java.beans.Beans;
 import recite18th.model.Model;
 import recite18th.util.ServletUtil;
 import java.io.IOException;
@@ -182,7 +183,8 @@ public class Controller extends HttpServlet {
     private Hashtable fillParams() {
         try {
             params = new Hashtable();
-            Class cl = Class.forName(modelForm.getFqn());
+            Class cl = Class.forName("application.models._"+modelForm.getPlainClassName());
+            //TOFIX: because we use cl.getFields(), all fields neet to be define as public
             Field[] fields = cl.getFields();
             String fieldValue;
             String fieldName;
@@ -190,9 +192,11 @@ public class Controller extends HttpServlet {
 
             for (int i = 0; i < fields.length; i++) {
                 fieldName = fields[i].getName();
+                //not used, foreign concept is no longer needed, because we only stored to DB what is in ScaffoldClass
+                //denoted by _
                 //only insert if it isn't foreign field
-                if(!modelForm.isForeignField(fieldName))
-                {
+//                if(!modelForm.isForeignField(fieldName))
+//                {
                     fieldValue = isMultipart? (formParams.get(fieldName)==null?null:formParams.get(fieldName)+""):request.getParameter(fieldName);
                     if (fieldValue != null) {
                         if (fieldName.equals(modelForm.getPkFieldName())) {
@@ -201,7 +205,7 @@ public class Controller extends HttpServlet {
                             params.put(fieldName, fieldValue);
                         }
                     }
-                }
+//                }
             }
             return params;
         } catch (ClassNotFoundException ex) {

@@ -44,6 +44,15 @@ public class Model {
         this.pkFieldValue = pkFieldValue;
     }
     protected String fqn;
+    protected String plainClassName;
+
+    public String getPlainClassName() {
+        return plainClassName;
+    }
+
+    public void setPlainClassName(String plainClassName) {
+        this.plainClassName = plainClassName;
+    }
 
     public String getFqn() {
         return fqn;
@@ -144,9 +153,9 @@ public class Model {
     }
 
     
-    protected Hashtable foreignFields = new Hashtable();
-    public boolean isForeignField(String fieldName)
+//    protected Hashtable foreignFields = new Hashtable();
+/*    public boolean isForeignField(String fieldName)
     {
         return foreignFields.get(fieldName)!=null;
-    }
+        }*/
 }

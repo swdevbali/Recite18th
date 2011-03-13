@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.apache.commons.beanutils.PropertyUtils;
 
 public class Db {
 
@@ -253,9 +254,13 @@ public class Db {
                 modelInstance = modelClass.newInstance();
                 for (int i = 1; i <= nColoumn; i++) {
                     columnName = metaData.getColumnName(i);
-                    field = modelInstance.getClass().getDeclaredField(columnName);
                     fieldValue = resultSet.getString(i);
-                    field.set(modelInstance, fieldValue);
+                    PropertyUtils.setSimpleProperty(modelInstance, columnName,fieldValue);
+                    //the good ol'ways.. don't use BeanUtils... The problem is, how can it able to get the 
+                    //field from super class??
+                    //field = modelInstance.getClass().getDeclaredField(columnName);                    
+                    //field.set(modelInstance, fieldValue);
+                    
                 }
                 result.add(modelInstance);
             }
@@ -283,10 +288,13 @@ public class Db {
             modelInstance = modelClass.newInstance();
             resultSet.next();
             for (int i = 1; i <= nColoumn; i++) {
-                columnName = metaData.getColumnName(i);
-                field = modelInstance.getClass().getDeclaredField(columnName);
-                fieldValue = resultSet.getString(i);
-                field.set(modelInstance, fieldValue);
+                //the good ol'ways.. don't use BeanUtils... The problem is, how can it able to get the 
+                //field from super class??
+                //field = modelInstance.getClass().getDeclaredField(columnName);
+                //field.set(modelInstance, fieldValue);
+                columnName = metaData.getColumnName(i);                
+                fieldValue = resultSet.getString(i);                
+                PropertyUtils.setSimpleProperty(modelInstance, columnName,fieldValue);
             }
 
         } catch (Exception ex) {
