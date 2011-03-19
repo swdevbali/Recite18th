@@ -145,4 +145,33 @@
 **** Kalkulator
 **** Buku Alamat
 **** Login/Logout
-      
+*** Lain-Lain
+**** DONE Command Line Tomcat
+    
+     dengan jpad
+    ant -Dtomcat.username='admin' -Dtomcat.password='adminadmin' -Dtomcat.home='C:\Program Files\Apache Software Foundation\Apache Tomcat 6.0.14' -Dtomcat.url='http://localhost:8080' -lib 'C:\Program Files\NetBeans 6.0\java1\ant\nblib\org-netbeans-modules-debugger-jpda-ant.jar' run-deploy 
+
+    masih belum berhasil :)
+    ant -Dtomcat.username='admin' -Dtomcat.password='adminadmin' -Dtomcat.home='C:\Program Files\Apache Software Foundation\Apache Tomcat 6.0.14' -Dtomcat.url='http://localhost:8080' -lib 'C:\Program Files\NetBeans 6.0\java1\ant\nblib\org-netbeans-modules-debugger-jpda-ant.jar'   run-undeploy
+    
+    Berhasil dari command line     
+**** TODO Autorisasi Page u/ User Tertentu
+     Jadi, sekuritas tiap halaman benar2 bisa dijaga khusus u/ jenis pengguna tertentu
+
+** Fitur AJAX pada Recite18th
+   AJAX Memungkinkan aplikasi memperbaharui tampilannya, tanpa merefresh ulang jendela browser, namun cukup dengan memanggil fungsi yang ada di server, 
+   dengan menggunakan AJAX. Pustaka AJAX yang dipakai adalah jQuery (pustaka yang kecil).
+
+   Kasusnya adalah pada Combo Box ID Soal untuk siswa tertentu, :
+   : <select name="idsoal" id="idsoal" onChange="javascript:ambilSoal()">
+   Maka pada fungsi ambilSoal():
+   : <script language="javascript" type="text/javascript">
+   : function ambilSoal()
+   :	{
+   :		var idsoal = formSoal.idsoal.value;
+   :		//TODO : dari sini, gunakan AJAX u/ memanggil soal yang sudah dijawab oleh siswa ini.
+   :	}
+   : </script>   
+
+   Pada perubahan pemilihan item pada combo Box, akan dipergunakan jQuery untuk mengambil data jawaban soal peserta test, dan ditampilkan ke jendela browser
+   saat ini, tanpa merefresh tampilan browser.

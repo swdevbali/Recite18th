@@ -26,6 +26,15 @@ public class Db {
         return con;
     }
 
+    public static int getLastInsertId() {
+        String[][] data = getDataSet("select LAST_INSERT_ID()");
+        if(data.length>0){
+            return Integer.parseInt(data[0][0]);
+        }else{
+            return -1;
+        }
+    }
+
     public static void init() {
         Logger.getLogger(Db.class.getName()).log(Level.INFO, "Database Initialization");
         if (con == null & !Database.DB.equals("")) {
@@ -250,6 +259,7 @@ public class Db {
             nColoumn = metaData.getColumnCount();
             resultSet.beforeFirst();
             Class modelClass = Class.forName(fqnModel);
+            
             while (resultSet.next()) {
                 modelInstance = modelClass.newInstance();
                 for (int i = 1; i <= nColoumn; i++) {

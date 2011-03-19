@@ -1,7 +1,6 @@
 package recite18th.controller;
 
 import application.config.Config;
-import java.beans.Beans;
 import recite18th.model.Model;
 import recite18th.util.ServletUtil;
 import java.io.IOException;
@@ -23,6 +22,7 @@ import org.apache.commons.fileupload.servlet.*;
 import org.apache.commons.fileupload.disk.*;
 import java.io.*;
 import java.util.*;
+import org.apache.commons.beanutils.PropertyUtils;
 
 public class Controller extends HttpServlet {
 
@@ -32,22 +32,38 @@ public class Controller extends HttpServlet {
     protected HttpServletResponse response;
     protected String viewPage;
     protected String formPage;
-    protected Hashtable params; //parameter for sql INSERT/UPDATE manipulation
-    HashMap formParams = new HashMap(); //parameter populate by form
+    private Hashtable params; //parameter for sql INSERT/UPDATE manipulation
+    private HashMap formParams = new HashMap(); //parameter populate by form. I make it private, I want to make sure all field data get by method getFormFieldValue
     List row = new ArrayList();
     protected String controllerName;
     protected String sqlViewDataPerPage;
     boolean isMultipart;
 
+    public void doSave() {
+        modelForm.save(fillParams());
+    }
+
+    public void goAfterSave() {
+        try {
+            ServletUtil.redirect(Config.base_url + "index/" + controllerName, request, response);
+        } catch (IOException ex) {
+            Logger.getLogger(Controller.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
+    public boolean isNewData() {
+        //get field value of primary key
+        modelForm.setPkFieldValue(getFormFieldValue(modelForm.getPkFieldName()));
+        boolean bIsNewData = "".equals(modelForm.getPkFieldValue());
+        Logger.getLogger(Controller.class.getName()).log(Level.INFO, "isNewData = " + bIsNewData);
+        return bIsNewData;
+    }
+
     public void save() {
         processFormData();
         if (validationRun()) {
-            try {
-                modelForm.save(fillParams());
-                ServletUtil.redirect(Config.base_url + "index/" + controllerName, request, response);
-            } catch (IOException ex) {
-                Logger.getLogger(Controller.class.getName()).log(Level.SEVERE, null, ex);
-            }
+            doSave();
+            goAfterSave();
         } else {
             //masukkan nilai yg tadi dimasukkan.. hadeuh...            
             input("-2");//MAGIC!
@@ -90,7 +106,6 @@ public class Controller extends HttpServlet {
     }
 
     public void input(String pkFieldValue) {
-        Field field;        
         try {
             if (pkFieldValue.equals("-2")) {
                 //Drawbacks : semua field harus didefinisikan jenis validasinya. dan itu ga baik. TODO : ubah ke formParams
@@ -99,9 +114,8 @@ public class Controller extends HttpServlet {
                 modelForm = modelForm.createNewModel();
                 while (e.hasMoreElements()) {
                     String ruleName = (String) e.nextElement();
-                    String value = isMultipart? (formParams.get(ruleName)==null?null:formParams.get(ruleName)+""):request.getParameter(ruleName);
-                    field = modelForm.getClass().getDeclaredField(ruleName);                    
-                    field.set(modelForm, value);
+                    String value = getFormFieldValue(ruleName);
+                    PropertyUtils.setSimpleProperty(modelForm, ruleName, value);
                     Logger.getLogger(Controller.class.getName()).log(Level.INFO, "validasi error, mengisi kembali " + ruleName + ", dengan value = " + value);
                 }
             } else if (pkFieldValue == null || pkFieldValue.equals("") || pkFieldValue.equals("-1")) {
@@ -135,10 +149,9 @@ public class Controller extends HttpServlet {
         this.response = response;
     }
 
-    public void processFormData()
-    {
+    public void processFormData() {
         //==== STARTOF penanganan multi-part data
-        
+
         isMultipart = ServletFileUpload.isMultipartContent(request);
         if (isMultipart) {
             FileItemFactory factory = new DiskFileItemFactory();
@@ -174,16 +187,17 @@ public class Controller extends HttpServlet {
                 }
             }
         }
-        //==== ENDOF penanganan multi-part data
+    //==== ENDOF penanganan multi-part data
     }
     /*
      * populate a hashtable with value from form, with regards to model public field 
      * added the ability to process multi-part data (form with file field)
      */
+
     private Hashtable fillParams() {
         try {
             params = new Hashtable();
-            Class cl = Class.forName("application.models._"+modelForm.getPlainClassName());
+            Class cl = Class.forName("application.models._" + modelForm.getPlainClassName());
             //TOFIX: because we use cl.getFields(), all fields neet to be define as public
             Field[] fields = cl.getFields();
             String fieldValue;
@@ -197,14 +211,14 @@ public class Controller extends HttpServlet {
                 //only insert if it isn't foreign field
 //                if(!modelForm.isForeignField(fieldName))
 //                {
-                    fieldValue = isMultipart? (formParams.get(fieldName)==null?null:formParams.get(fieldName)+""):request.getParameter(fieldName);
-                    if (fieldValue != null) {
-                        if (fieldName.equals(modelForm.getPkFieldName())) {
-                            modelForm.setPkFieldValue(fieldValue);
-                        } else {
-                            params.put(fieldName, fieldValue);
-                        }
+                fieldValue = getFormFieldValue(fieldName);
+                if (fieldValue != null) {
+                    if (fieldName.equals(modelForm.getPkFieldName())) {
+                        modelForm.setPkFieldValue(fieldValue);
+                    } else {
+                        params.put(fieldName, fieldValue);
                     }
+                }
 //                }
             }
             return params;
@@ -238,7 +252,7 @@ public class Controller extends HttpServlet {
             while (st.hasMoreTokens()) {
                 String token = st.nextToken().toLowerCase();
                 Logger.getLogger(Controller.class.getName()).log(Level.INFO, "Rule for " + ruleName + ", " + token);
-                fieldValue = isMultipart? (formParams.get(ruleName)==null?null:formParams.get(ruleName)+""):request.getParameter(ruleName);
+                fieldValue = getFormFieldValue(ruleName);
                 if (token.equals("required")) {
                     if (fieldValue == null || "".equals(fieldValue)) {
                         Logger.getLogger(Controller.class.getName()).log(Level.INFO, "ERROR" + ruleName + ", " + token);
@@ -257,5 +271,9 @@ public class Controller extends HttpServlet {
             }
         }
         return allPass;
+    }
+
+    public String getFormFieldValue(String fieldName) {
+        return isMultipart ? (formParams.get(fieldName) == null ? null : formParams.get(fieldName) + "") : request.getParameter(fieldName);
     }
 }
