@@ -212,7 +212,8 @@ public class Controller extends HttpServlet {
 //                if(!modelForm.isForeignField(fieldName))
 //                {
                 fieldValue = getFormFieldValue(fieldName);
-                if (fieldValue != null) {
+                //TOFIX : -1 usually been used in foreign key, so if it's don't store it.... This is magic constant!!! Hehe
+                if (fieldValue != null && !fieldValue.equals("-1")) { 
                     if (fieldName.equals(modelForm.getPkFieldName())) {
                         modelForm.setPkFieldValue(fieldValue);
                     } else {
