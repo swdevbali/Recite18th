@@ -87,12 +87,18 @@ public class ServletUtil {
                 out.print("can not dispatch to " + viewPage);
             }
         } catch (Exception ex) {
-            Logger.getLogger(ServletUtil.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(ServletUtil.class.getName()).log(Level.SEVERE, ex.getMessage(), ex);
         }
     }
 
-    public static void redirect(String page, HttpServletRequest request, HttpServletResponse response) throws IOException {
-        response.sendRedirect(page);
+    public static void redirect(String page, HttpServletRequest request, HttpServletResponse response)  {
+        try
+        {
+            response.sendRedirect(page);
+        }catch(IOException ex)
+        {
+            Logger.getLogger(ServletUtil.class.getName()).log(Level.SEVERE, ex.getMessage(), ex);         
+        }
     }
     // properties ///////////////////////////////////////////////////////////////
     // attributes ///////////////////////////////////////////////////////////////

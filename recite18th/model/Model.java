@@ -1,3 +1,28 @@
+/*
+    Recite18th is a simple, easy to use and straightforward Java Database 
+    Web Application Framework. See http://code.google.com/p/recite18th
+    Copyright (C) 2011  Eko Suprapto Wibowo (swdev.bali@gmail.com)
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see http://www.gnu.org/licenses/.
+*/
+
+/*
+  HISTORY
+  1) Forgot when I first create this
+  2) Mar 23, 2011 = reshape to a better CI activeRecordset things
+ */
+
 package recite18th.model;
 
 import recite18th.library.Db;
@@ -14,8 +39,10 @@ import java.util.logging.Logger;
  * 
  * @author Eko SW
  */
-public class Model {
-
+public class Model
+{
+    String criteria="";
+    protected boolean isExist = false;
     public Model createNewModel() {
         Model model = null;
         try {
@@ -60,6 +87,10 @@ public class Model {
 
     public String getPkFieldName() {
         return pkFieldName;
+    }
+
+    public void setPkFieldName(String pkFieldName) {
+        this.pkFieldName = pkFieldName;
     }
 
     public Model(String table, String pkFieldName) {
@@ -152,10 +183,40 @@ public class Model {
         return  (Model) Db.getById(tableName,pkFieldName,fqn, pkFieldValue);
     }
 
-    
+// foreign field is useless, because we separate between user modifed model and system imported model    
 //    protected Hashtable foreignFields = new Hashtable();
 /*    public boolean isForeignField(String fieldName)
     {
         return foreignFields.get(fieldName)!=null;
         }*/
+    public void addCriteria(String fieldName, String fieldValue)
+    {
+        
+        //listCriteria.put(fieldName, fieldValue);
+        if(!criteria.equals(""))
+        {
+            criteria =  criteria + " and " + fieldName + " = '" + fieldValue + "'";                 
+        }else
+        {
+            criteria =  fieldName + " = '" + fieldValue + "'";
+        }
+
+    }
+
+    // Get data for this model, can be single row, or multiple row
+    public Object getModel()
+    {
+        String sql="select * from " + tableName;
+        if(!criteria.equals("")) sql =  sql + " where " + criteria;
+        Object result = Db.getBySql(sql, fqn);
+        isExist = result!=null;
+        return result;
+
+    }
+
+    public boolean exist()
+    {
+        if(!isExist) Logger.getLogger(Model.class.getName()).log(Level.INFO, "Data don't exist, don't forget to call get() first!");
+        return isExist;
+    }
 }

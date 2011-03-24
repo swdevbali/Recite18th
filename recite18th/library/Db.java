@@ -1,3 +1,28 @@
+/*
+    Recite18th is a simple, easy to use and straightforward Java Database 
+    Web Application Framework. See http://code.google.com/p/recite18th
+    Copyright (C) 2011  Eko Suprapto Wibowo (swdev.bali@gmail.com)
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see http://www.gnu.org/licenses/.
+*/
+
+/*
+  HISTORY
+  1) forgot when first create this file
+  2) Mar 23, 2011 = about to create a SQL-less model/controller
+ */
+
 package recite18th.library;
 
 import application.config.Database;
@@ -280,7 +305,11 @@ public class Db {
         return result;
     }
 
-    public static Object getById(String tableName, String pkFieldName, String fqn, String pkFieldValue) {
+    /*
+     * Eventually, this will be the core method to get object from database
+     */
+    public static Object getBySql(String sql, String fqn)
+    {
         Object modelInstance = null;
         try {
             Class modelClass = Class.forName(fqn);
@@ -288,28 +317,39 @@ public class Db {
             String columnName;
             String fieldValue;
             Field field;
-            String sql = "select * from " + tableName + " where " + pkFieldName + "='" + pkFieldValue + "'";
+
             PreparedStatement pstmt = getCon().prepareStatement(sql, ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_READ_ONLY);
             Logger.getLogger(Db.class.getName()).log(Level.INFO, sql);
             ResultSet resultSet = pstmt.executeQuery();
             metaData = resultSet.getMetaData();
             int nColoumn = metaData.getColumnCount();
             resultSet.beforeFirst();
-            modelInstance = modelClass.newInstance();
-            resultSet.next();
-            for (int i = 1; i <= nColoumn; i++) {
-                //the good ol'ways.. don't use BeanUtils... The problem is, how can it able to get the 
-                //field from super class??
-                //field = modelInstance.getClass().getDeclaredField(columnName);
-                //field.set(modelInstance, fieldValue);
-                columnName = metaData.getColumnName(i);                
-                fieldValue = resultSet.getString(i);                
-                PropertyUtils.setSimpleProperty(modelInstance, columnName,fieldValue);
+            Logger.getLogger(Db.class.getName()).log(Level.INFO, "About to process data");
+            if(resultSet.next())
+            {
+                Logger.getLogger(Db.class.getName()).log(Level.INFO, "Data exist");
+                modelInstance = modelClass.newInstance();
+                for (int i = 1; i <= nColoumn; i++) {
+                    //the good ol'ways.. don't use BeanUtils... The problem is, how can it able to get the 
+                    //field from super class??
+                    //field = modelInstance.getClass().getDeclaredField(columnName);
+                    //field.set(modelInstance, fieldValue);
+                    columnName = metaData.getColumnName(i);                
+                    fieldValue = resultSet.getString(i);                
+                    PropertyUtils.setSimpleProperty(modelInstance, columnName,fieldValue);
+                }                
+            } else{ 
+                Logger.getLogger(Db.class.getName()).log(Level.INFO, "Data !exist");
             }
-
         } catch (Exception ex) {
-            Logger.getLogger(Db.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(Db.class.getName()).log(Level.SEVERE, ex.getMessage(), ex);
         }
         return modelInstance;
+    }
+
+    
+    public static Object getById(String tableName, String pkFieldName, String fqn, String pkFieldValue) {        
+        String sql = "select * from " + tableName + " where " + pkFieldName + "='" + pkFieldValue + "'";
+        return getBySql(sql,fqn);
     }
 }

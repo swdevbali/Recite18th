@@ -1,3 +1,22 @@
+/*
+    Recite18th is a simple, easy to use and straightforward Java Database 
+    Web Application Framework. See http://code.google.com/p/recite18th
+    Copyright (C) 2011  Eko Suprapto Wibowo (swdev.bali@gmail.com)
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see http://www.gnu.org/licenses/.
+*/
+
 package recite18th.controller;
 
 import application.config.Config;
@@ -24,6 +43,9 @@ import java.io.*;
 import java.util.*;
 import org.apache.commons.beanutils.PropertyUtils;
 
+//authorization
+import recite18th.util.LoginUtil;
+
 public class Controller extends HttpServlet {
 
     protected Model modelForm;
@@ -39,16 +61,16 @@ public class Controller extends HttpServlet {
     protected String sqlViewDataPerPage;
     boolean isMultipart;
 
+    //authorization things...
+    protected boolean isNeedAuthorization = false;//default controller is free
+    protected String authorList=null;//if isNeedAuthorization is true, then this mean all authorized user can access this controller. IDEA: controller level || method level authorization :)
+
     public void doSave() {
         modelForm.save(fillParams());
     }
 
     public void goAfterSave() {
-        try {
-            ServletUtil.redirect(Config.base_url + "index/" + controllerName, request, response);
-        } catch (IOException ex) {
-            Logger.getLogger(Controller.class.getName()).log(Level.SEVERE, null, ex);
-        }
+        ServletUtil.redirect(Config.base_url + "index/" + controllerName, request, response);
     }
 
     public boolean isNewData() {
@@ -90,10 +112,31 @@ public class Controller extends HttpServlet {
             request.setAttribute("row", row);
         }
         try {
-            ServletUtil.dispatch("/WEB-INF/views/" + viewPage, request, response);
+            if(!isNeedAuthorization)//doesn't need authorization
+            {
+                ServletUtil.dispatch("/WEB-INF/views/" + viewPage, request, response);
+            }else
+            {
+                if (isNeedAuthorization && LoginUtil.isLogin(request))//need authorization and already login
+                {
+                    if(authorList==null || "".equals(authorList))//.. but with no authorlist defined
+                    {
+                        ServletUtil.dispatch("/WEB-INF/views/"+viewPage, request, response);
+                    } else //..with authorlist defined
+                    {
+                        String role = LoginUtil.getLoginRole(request);
+                        //TOFIX : not just contains(), but split it, and compare each component of it
+                        if(authorList.contains(role)) ServletUtil.dispatch("/WEB-INF/views/" + viewPage, request, response);
+                    }
+                        
+                } else if(isNeedAuthorization && !LoginUtil.isLogin(request)) //need authorization and not login
+                {
+                    ServletUtil.redirect(Config.base_url + "index/" + Config.loginController, request, response);
+                }
+            }
         } catch (Exception ex) {
             Logger.getLogger(Controller.class.getName()).log(Level.SEVERE, null, ex);
-            ServletUtil.dispatch("/WEB-INF/views/" + viewPage, request, response);
+            ServletUtil.dispatch(Config.base_url+Config.page404, request, response);
         }
     }
 
@@ -102,7 +145,11 @@ public class Controller extends HttpServlet {
      * @param page
      */
     public void index(String page) {
-        ServletUtil.dispatch("/WEB-INF/views/" + page, request, response);
+        //QUICKFIX
+        String oldViewPage = viewPage;
+        viewPage = page;
+        index();
+        viewPage = oldViewPage;
     }
 
     public void input(String pkFieldValue) {
@@ -133,12 +180,8 @@ public class Controller extends HttpServlet {
     }
 
     public void delete(String pkFieldValue) {
-        try {
-            modelForm.delete(pkFieldValue);
-            ServletUtil.redirect(Config.base_url + "index/" + controllerName, request, response);
-        } catch (IOException ex) {
-            Logger.getLogger(Controller.class.getName()).log(Level.SEVERE, null, ex);
-        }
+        modelForm.delete(pkFieldValue);
+        ServletUtil.redirect(Config.base_url + "index/" + controllerName, request, response);
     }
 
     public void setRequest(HttpServletRequest request) {
