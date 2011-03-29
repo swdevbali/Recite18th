@@ -145,11 +145,11 @@ public class Controller extends HttpServlet {
      * @param page
      */
     public void index(String page) {
-        //QUICKFIX
-        String oldViewPage = viewPage;
+        ServletUtil.dispatch("/WEB-INF/views/" + page, request, response);
+        /*String oldViewPage = viewPage;
         viewPage = page;
         index();
-        viewPage = oldViewPage;
+        viewPage = oldViewPage;*/
     }
 
     public void input(String pkFieldValue) {

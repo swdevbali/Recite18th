@@ -85,6 +85,11 @@ public class GenerateForm
                 if(!fDir.exists()) fDir.mkdir();
                 File fView = new File("../../web/WEB-INF/views/" + tableName + "/view_"+ tableName + ".jsp");
                 Writer outView = new FileWriter(fView);                
+                outView.write("<%@ page contentType=\"text/html; charset=UTF-8\" language=\"java\" import=\"java.sql.*,recite18th.library.Db,application.config.Config,recite18th.library.Pagination\" %>");
+                outView.write("<%@ taglib uri=\"http://java.sun.com/jsp/jstl/core\" prefix=\"c\" %>\n");
+                outView.write("<%@ taglib uri=\"http://java.sun.com/jsp/jstl/functions\" prefix=\"fn\" %>\n");
+                outView.write("<% int pagenum = 0; %>\n");
+                //outView.write("<%@ include file=\"/WEB-INF/views/header.jsp\" %>");
                 outView.write("<a href=\"<%=Config.base_url%>index/"+ className + "/input/-1\">Tambah Data</a>\n");
                 outView.write("<table width=\"100%\" id=\"rounded-corner\">\n");
                 outView.write("<thead>\n");
@@ -105,7 +110,7 @@ public class GenerateForm
                 outView.write("</thead>\n");
                 outView.write("<tfoot>\n");
                 outView.write("  <tr>\n");
-                outView.write("    <td colspan=\"2\" class=\"rounded-foot-left\"><%=Pagination.createLinks(pagenum)%></td>\n");
+                outView.write("    <td colspan=\"" + (nColoumn + 1) +"\" class=\"rounded-foot-left\"><%=Pagination.createLinks(pagenum)%></td>\n");
                 outView.write("    <td class=\"rounded-foot-right\">&nbsp;</td>\n");
                 outView.write("  </tr>\n");
                 outView.write("</tfoot>\n");
@@ -143,7 +148,7 @@ public class GenerateForm
                 outView.write("  </c:forEach>\n");
                 outView.write("</tbody>\n");
                 outView.write("</table>\n");
-
+                //outView.write("<%@ include file=\"/WEB-INF/views/footer.jsp\" %>");
                 outView.flush();
                 outView.close();
             }

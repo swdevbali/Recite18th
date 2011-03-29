@@ -41,7 +41,8 @@ import java.util.logging.Logger;
  */
 public class Model
 {
-    String criteria="";
+    String query=null; //sql for getModel()
+    String criteria=""; //sql criteria when query is null, that is query priority exceeds criteria
     protected boolean isExist = false;
     public Model createNewModel() {
         Model model = null;
@@ -204,11 +205,19 @@ public class Model
     }
 
     // Get data for this model, can be single row, or multiple row
+    public void setQuery(String query)
+    {
+        this.query = query;
+    }
+
     public Object getModel()
     {
-        String sql="select * from " + tableName;
-        if(!criteria.equals("")) sql =  sql + " where " + criteria;
-        Object result = Db.getBySql(sql, fqn);
+        if(query == null) 
+        {
+            query = "select * from " + tableName;
+            if(!criteria.equals("")) query =  query + " where " + criteria;
+        }
+        Object result = Db.getBySql(query, fqn);
         isExist = result!=null;
         return result;
 
