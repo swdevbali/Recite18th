@@ -84,7 +84,9 @@ public class Db {
         String urldb = "";
         try {
             urldb = getUrl();
-            Logger.getLogger(Db.class.getName()).log(Level.INFO, "openConnectin : {0}", urldb);
+            Logger.getLogger(Db.class.getName()).log(Level.INFO, "openConnection : {0}", urldb);
+            Logger.getLogger(Db.class.getName()).log(Level.INFO, "username : {0}", Database.USER_NAME);
+            Logger.getLogger(Db.class.getName()).log(Level.INFO, "password : {0}", Database.PASSWORD);
             if (Database.DB_TYPE.equals("mysql")) {
                 con = DriverManager.getConnection(urldb, Database.USER_NAME, Database.PASSWORD);
             } else if (Database.DB_TYPE.equals("mssql")) {
@@ -349,7 +351,16 @@ public class Db {
 
     
     public static Object getById(String tableName, String pkFieldName, String fqn, String pkFieldValue) {        
+        
+        
         String sql = "select * from " + tableName + " where " + pkFieldName + "='" + pkFieldValue + "'";
+        //customize it here:???
+        
+        return getBySql(sql,fqn);
+    }
+
+    public static Object getById(String sqlById, String tableName, String pkFieldName, String fqn, String pkFieldValue) {        
+        String sql = String.format(sqlById, pkFieldName + "='" + pkFieldValue + "'");
         return getBySql(sql,fqn);
     }
 }

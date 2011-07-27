@@ -56,7 +56,7 @@ public class Controller extends HttpServlet {
     protected String formPage;
     private Hashtable params; //parameter for sql INSERT/UPDATE manipulation
     private HashMap formParams = new HashMap(); //parameter populate by form. I make it private, I want to make sure all field data get by method getFormFieldValue
-    List row = new ArrayList();
+    protected List row = new ArrayList();
     protected String controllerName;
     protected String sqlViewDataPerPage;
     boolean isMultipart;
@@ -193,7 +193,7 @@ public class Controller extends HttpServlet {
     }
 
     public void processFormData() {
-        //==== STARTOF penanganan multi-part data
+        //==== START OF penanganan multi-part data
 
         isMultipart = ServletFileUpload.isMultipartContent(request);
         if (isMultipart) {
@@ -259,9 +259,12 @@ public class Controller extends HttpServlet {
                 if (fieldValue != null && !fieldValue.equals("-1")) { 
                     if (fieldName.equals(modelForm.getPkFieldName())) {
                         modelForm.setPkFieldValue(fieldValue);
-                    } else {
-                        params.put(fieldName, fieldValue);
-                    }
+                        //every PK field has it hidden_*** field set. store it in temp
+                        params.put("hidden_" + fieldName, getFormFieldValue("hidden_" + fieldName));
+                    } /*else {*/
+                    Logger.getLogger(Controller.class.getName()).log(Level.INFO, "Putting field form {0} into params", fieldName);                    
+                    params.put(fieldName, fieldValue);
+                        /*}*/
                 }
 //                }
             }

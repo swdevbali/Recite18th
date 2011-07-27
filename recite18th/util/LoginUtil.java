@@ -30,6 +30,6 @@ public class LoginUtil
     
     public static void clearLogin(HttpServletRequest request)
     {
-        request.getSession().removeAttribute("user_credential");
+        request.getSession().invalidate();//removeAttribute("user_credential");
     }
 }

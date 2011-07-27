@@ -44,6 +44,8 @@ public class Model
     String query=null; //sql for getModel()
     String criteria=""; //sql criteria when query is null, that is query priority exceeds criteria
     protected boolean isExist = false;
+
+    protected String sqlById=null; //added for displaying complex/custom sql for an input form
     public Model createNewModel() {
         Model model = null;
         try {
@@ -54,6 +56,7 @@ public class Model
         }
         return model;
     }
+
 
     public String getTableName() {
         return tableName;
@@ -114,13 +117,17 @@ public class Model
         while (e.hasMoreElements()) {
             key = e.nextElement() + "";
             value = params.get(key) + "";
-            sql = sql + key + "='" + value.trim() + "'";
-            if (e.hasMoreElements()) {
-                sql = sql + ",";
+            if(!key.equals("hidden_"+pkFieldName))
+            {
+                sql = sql + key + "='" + value.trim() + "'";
+                if (e.hasMoreElements()) {
+                    sql = sql + ",";
+                }
             }
         }
 
-        sql = sql + " where " + pkFieldName + "=" + pkFieldValue.trim();
+        //sql = sql + " where " + pkFieldName + "='" + pkFieldValue.trim() + "'";
+        sql = sql + " where " + pkFieldName + "='" + (""+params.get("hidden_" + pkFieldName)).trim() + "'";
         System.out.println(sql);
         Db.executeQuery(sql);
     }
@@ -133,9 +140,12 @@ public class Model
         e = params.keys();
         while (e.hasMoreElements()) {
             key = e.nextElement() + "";
-            sql = sql + key;
-            if (e.hasMoreElements()) {
-                sql = sql + ",";
+            if(!key.equals("hidden_"+pkFieldName))
+            {
+                sql = sql + key;
+                if (e.hasMoreElements()) {
+                    sql = sql + ",";
+                }
             }
         }
         sql = sql + ") values (";
@@ -144,9 +154,12 @@ public class Model
         while (e.hasMoreElements()) {
             key = e.nextElement() + "";
             value = params.get(key) + "";
-            sql = sql + "'" + value.trim() + "'";
-            if (e.hasMoreElements()) {
-                sql = sql + ",";
+            if(!key.equals("hidden_"+pkFieldName))
+            {
+                sql = sql + "'" + value.trim() + "'";
+                if (e.hasMoreElements()) {
+                    sql = sql + ",";
+                }
             }
         }
         sql = sql + ")";
@@ -165,7 +178,13 @@ public class Model
 
     public void save(Hashtable params) {
         //null == "" == -1 for database application ;)
-        if (pkFieldValue==null || "".equals(pkFieldValue)||"-1".equals(pkFieldValue)) {
+        Logger.getLogger(Model.class.getName()).log(Level.INFO, "save with PK Field = {0}", params.get(pkFieldName));
+
+        //if (params.get(pkFieldName)!=null && ( pkFieldValue==null || "".equals(pkFieldValue)||"-1".equals(pkFieldValue))) {
+        if (params.get("hidden_"+pkFieldName).equals("-1") || params.get("hidden_"+pkFieldName).equals(""))  {
+            //this is fix for MySQL Bugs : http://bugs.mysql.com/bug.php?id=36411, read also http://dev.mysql.com/doc/refman/5.1/en/innodb-auto-increment-handling.html
+            //we must use -1 for insert of new pkfield column
+            //params.put(pkFieldName,"-1");
             insert(params);
         } else {
             update(params);
@@ -181,7 +200,10 @@ public class Model
     }
 
     public Model getModelById(String pkFieldValue) {
-        return  (Model) Db.getById(tableName,pkFieldName,fqn, pkFieldValue);
+        if(sqlById==null)
+            return  (Model) Db.getById(tableName,pkFieldName,fqn, pkFieldValue);
+        else
+            return  (Model) Db.getById(sqlById, tableName,pkFieldName,fqn, pkFieldValue);
     }
 
 // foreign field is useless, because we separate between user modifed model and system imported model    

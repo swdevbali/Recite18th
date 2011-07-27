@@ -87,19 +87,19 @@ public class Index extends HttpServlet {
                         break;
                     case 1:
                         objMethod.invoke(objController, path[3]);
-                        Logger.getLogger(Index.class.getName()).log(Level.INFO, ("Dengan " + paramCount + " parameter : " + path[3]));
+                        Logger.getLogger(Index.class.getName()).log(Level.INFO, ("Dengan 1 parameter : " + path[3]));
                         break;
                     case 2:
                         objMethod.invoke(objController, path[3], path[4]);
-                        Logger.getLogger(Index.class.getName()).log(Level.INFO, ("Dengan " + paramCount + " parameter : " + path[3] + "," + path[4]));
+                        Logger.getLogger(Index.class.getName()).log(Level.INFO, ("Dengan 2 parameter : " + path[3] + "/" + path[4]));
                         break;
                     case 3:
                         objMethod.invoke(objController, path[3], path[4], path[5]);
-                        Logger.getLogger(Index.class.getName()).log(Level.INFO, ("Dengan " + paramCount + " parameter : " + path[3] + "," + path[4] + "," + path[5]));
+                        Logger.getLogger(Index.class.getName()).log(Level.INFO, ("Dengan 3 parameter : " + path[3] + "/" + path[4] + "/" + path[5]));
                         break;
                     case 4:
-                        objMethod.invoke(objController, path[3], path[4], path[5], path[6]); //ini berarti index/class/method/1/2/3/4... sptnya dah cukup sekali... :)
-                        Logger.getLogger(Index.class.getName()).log(Level.INFO, ("Dengan " + paramCount + " parameter : " + path[3] + "," + path[4] + "," + path[5] + "," + path[5]));
+                        objMethod.invoke(objController, path[3], path[4], path[5], path[6]);
+                        Logger.getLogger(Index.class.getName()).log(Level.INFO, ("Dengan 4 parameter : " + path[3] + "/" + path[4] + "/" + path[5] + "/" + path[6]));
                         break;
                 }
             } catch (InstantiationException ex) {
