@@ -1,0 +1,1 @@
+javac -cp .;src/java;mysql.jar;beans.jar;logging.jar;src/java/recite18th/model;recite18th/library;src/java/recite18th/util;recite18th/model;recite18th/library;recite18th/util recite18th/util/Synch.java 
