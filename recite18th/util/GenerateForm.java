@@ -145,6 +145,7 @@ public class GenerateForm
                             {
                                 
                                 // ENUM Column, displayed as HTML SELECT. May will only work for mysql only...
+                                Logger.getLogger(GenerateForm.class.getName()).log(Level.INFO, columnName +   " type is " + metaColumn.getColumnType(i));
                                 if(metaColumn.getColumnType(i)==1)
                                 {
                                     String enum_content[][] = Db.getDataSet("SELECT SUBSTRING(COLUMN_TYPE,6,length(SUBSTRING(COLUMN_TYPE,6))-1) as enum_content " +
@@ -164,7 +165,35 @@ public class GenerateForm
                                         // no enum content detected.. :)
                                         out.write("<input name=\""+columnName+"\" type=\"text\" id=\""+columnName+"\" value=\"${model."+columnName+"}\"/>\n");
                                     }
-                                }else{
+                                } else if(metaColumn.getColumnType(i)==91)
+                                {
+                                    out.write("<input name=\""+columnName+"\" type=\"text\" id=\""+columnName+"\" value=\"${model."+columnName+"}\"/>\n");
+                                    out.write("<script>\n");
+                                    out.write("  (function($){\n");
+
+                                    out.write("  $('#"+columnName+"').click(function() {\n");
+                                    out.write("    $('#"+columnName+"').DatePickerShow();\n");
+                                    out.write("  });\n");
+
+                                    out.write("  $('#"+columnName+"').DatePicker({\n");
+                                    out.write("    format:'Y-m-d',\n");
+                                    out.write("    date: $('#"+columnName+"').val(),\n");
+                                    out.write("    current: $('#"+columnName+"').val(),\n");
+                                    out.write("    starts: 1,\n");
+                                    out.write("    position: 'r',\n");
+
+                                    out.write("    onBeforeShow: function(){\n");
+                                    out.write("      $('#"+columnName+"').DatePickerSetDate($('#"+columnName+"').val(), true);\n");
+                                    out.write("    },\n");
+
+                                    out.write("    onChange: function(formated, dates){\n");
+                                    out.write("      $('#"+columnName+"').DatePickerHide();\n");
+                                    out.write("      $('#"+columnName+"').val(formated);\n");
+                                    out.write("    }\n");
+                                    out.write("  });\n");
+                                    out.write("  })(jQuery)\n");
+                                    out.write(" </script>\n");
+                                } else{
                                     out.write("<input name=\""+columnName+"\" type=\"text\" id=\""+columnName+"\" value=\"${model."+columnName+"}\"/>\n");
                                 }
                             } else { // PK case
