@@ -22,6 +22,7 @@
    Mar 22, 2011 = first created
    Apr 20, 2011 = About to implement form generator
    Jul 21, 2011 = About to implement PK entry field (previously, it was hidden and assumed to be of autoincrement value)
+   Jul 28, 2011 = Fix date picker for new data
 */
 
 package recite18th.util;
@@ -169,6 +170,7 @@ public class GenerateForm
                                 {
                                     out.write("<input name=\""+columnName+"\" type=\"text\" id=\""+columnName+"\" value=\"${model."+columnName+"}\"/>\n");
                                     out.write("<script>\n");
+                                    out.write(" if(!isValidDate($('#"+ columnName + "').val())) $('#"+ columnName + "').val('1980-1-1');\n");//TODO: default value
                                     out.write("  (function($){\n");
 
                                     out.write("  $('#"+columnName+"').click(function() {\n");
