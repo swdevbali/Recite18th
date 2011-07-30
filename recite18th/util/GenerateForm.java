@@ -23,6 +23,7 @@
    Apr 20, 2011 = About to implement form generator
    Jul 21, 2011 = About to implement PK entry field (previously, it was hidden and assumed to be of autoincrement value)
    Jul 28, 2011 = Fix date picker for new data
+   Jul 30, 2011 = Adding ignore.list to ignore this file being overwritten by GenerateForm
 */
 
 package recite18th.util;
@@ -40,6 +41,9 @@ public class GenerateForm
 {
     public static void main(String arg[])
     {
+        Hashtable ignoreList = new Hashtable();
+        Class cl = null;
+        Model model = null;
         System.out.println("Synchronizing forms with database...");
         Db.init();
 
@@ -47,7 +51,9 @@ public class GenerateForm
             DatabaseMetaData meta = Db.getCon().getMetaData();
             String[] types = {"TABLE"};
             ResultSet rs = meta.getTables(null,null,"%",types);
-           
+     
+            //read ignore.list
+            ignoreList = AutogenerateUtil.readIgnoreList();
             //prepare directory
             File fDir = new File("../../web/WEB-INF/views/crud_form");
             if(!fDir.exists()) fDir.mkdir();
@@ -85,39 +91,44 @@ public class GenerateForm
                 fDir = new File("../../web/WEB-INF/views/" + tableName);
                 if(!fDir.exists()) fDir.mkdir();
                 File f = new File("../../web/WEB-INF/views/" + tableName + "/form_" + tableName + ".jsp");
-                Writer out = new FileWriter(f);
-                out.write("<%@ page contentType=\"text/html; charset=UTF-8\" language=\"java\" import=\"java.sql.*,recite18th.library.Db,application.config.Config,recite18th.library.Pagination\" %>");
-                out.write("<%@ taglib uri=\"http://java.sun.com/jsp/jstl/core\" prefix=\"c\" %>\n");
-                out.write("<%@ taglib uri=\"http://java.sun.com/jsp/jstl/functions\" prefix=\"fn\" %>\n");
-
-
-                //create model for this class, use in detecting its PK Field
-                Class cl = Class.forName("application.models." + className + "Model");
-                Model model = (Model) cl.newInstance();
-                
-                //iterate all columns
-                resultSet.beforeFirst();
-                resultSet.next();
-                out.write("<table border=\"1\" align=\"center\" cellpadding=\"0\" cellspacing=\"0\" bordercolor=\"#E8EDFF\">\n");
-                out.write("<tr>\n");
-                out.write("<td>\n");
-                out.write("<form action=\"<%=Config.base_url%>index/" + className + "/save\">\n");
-                out.write("<table id=\"hor-zebra\" summary=\"Form "+ className + "\">\n");
-                out.write("<thead>\n");
-                out.write("<tr>\n");
-                out.write("<th colspan=\"2\" class=\"odd\" scope=\"col\">Form " + className + " </th>\n");
-                out.write("</tr>\n");
-                out.write("</thead>\n");
-                out.write("<tbody>\n");
-                                
-                for (int i = 1; i <= nColoumn; i++) {
-                    String columnName = metaColumn.getColumnName(i);
-                    String dataType = metaColumn.getColumnClassName(i);
+                if(ignoreList.get("form_" + tableName + ".jsp")!=null)
+                {
+                    Logger.getLogger(GenerateForm.class.getName()).log(Level.INFO, "Ignoring creation of form_" + tableName + ".jsp");
+                }else
+                {
+                    Writer out = new FileWriter(f);
+                    out.write("<%@ page contentType=\"text/html; charset=UTF-8\" language=\"java\" import=\"java.sql.*,recite18th.library.Db,application.config.Config,recite18th.library.Pagination\" %>");
+                    out.write("<%@ taglib uri=\"http://java.sun.com/jsp/jstl/core\" prefix=\"c\" %>\n");
+                    out.write("<%@ taglib uri=\"http://java.sun.com/jsp/jstl/functions\" prefix=\"fn\" %>\n");
+                    
+                    
+                    //create model for this class, use in detecting its PK Field
+                    cl = Class.forName("application.models." + className + "Model");
+                    model = (Model) cl.newInstance();
+                    
+                    //iterate all columns
+                    resultSet.beforeFirst();
+                    resultSet.next();
+                    out.write("<table border=\"1\" align=\"center\" cellpadding=\"0\" cellspacing=\"0\" bordercolor=\"#E8EDFF\">\n");
                     out.write("<tr>\n");
-    
-                    //if(!columnName.equals(model.getPkFieldName())) // implementing the case of PK not AutoIncrement
-                    //if(!metaColumn.isAutoIncrement(i))
-                    //{
+                    out.write("<td>\n");
+                    out.write("<form action=\"<%=Config.base_url%>index/" + className + "/save\" method=\"post\" enctype=\"multipart/form-data\">\n"); //I hope it's okay to default it to multipart data
+                    out.write("<table id=\"hor-zebra\" summary=\"Form "+ className + "\">\n");
+                    out.write("<thead>\n");
+                    out.write("<tr>\n");
+                    out.write("<th colspan=\"2\" class=\"odd\" scope=\"col\">Form " + className + " </th>\n");
+                    out.write("</tr>\n");
+                    out.write("</thead>\n");
+                    out.write("<tbody>\n");
+                    
+                    for (int i = 1; i <= nColoumn; i++) {
+                        String columnName = metaColumn.getColumnName(i);
+                        String dataType = metaColumn.getColumnClassName(i);
+                        out.write("<tr>\n");
+                        
+                        //if(!columnName.equals(model.getPkFieldName())) // implementing the case of PK not AutoIncrement
+                        //if(!metaColumn.isAutoIncrement(i))
+                        //{
                         // varying field input for type
                         
                         //foreign field, as chooser page view
@@ -126,7 +137,7 @@ public class GenerateForm
                             String fkTableName = hashFk.get(columnName+"_table") + "";
                             String fkColumnName = hashFk.get(columnName) + "";
                             String fkController = StringUtil.toProperClassName(fkTableName);
-
+                            
                             out.write("<td>" + columnName + "</td>\n");
                             out.write("<td>\n");
                             out.write("<input name=\""+columnName+"\" type=\"hidden\" id=\""+columnName+"\" value=\"${model."+columnName+"}\"/>\n");
@@ -137,13 +148,14 @@ public class GenerateForm
                         else 
                         {
                             
-                            out.write("<td>" + columnName + "</td>\n");
-                            out.write("<td>\n");
-
+                            
                             
                             // regular field input, not foreign key case
                             if(!columnName.equals(model.getPkFieldName()))
                             {
+                                out.write("<td>" + columnName + "</td>\n");
+                                out.write("<td>\n");
+
                                 
                                 // ENUM Column, displayed as HTML SELECT. May will only work for mysql only...
                                 Logger.getLogger(GenerateForm.class.getName()).log(Level.INFO, columnName +   " type is " + metaColumn.getColumnType(i));
@@ -197,143 +209,149 @@ public class GenerateForm
                                     out.write(" </script>\n");
                                 } else{
                                     out.write("<input name=\""+columnName+"\" type=\"text\" id=\""+columnName+"\" value=\"${model."+columnName+"}\"/>\n");
+                                    out.write("${" + columnName + "_error}\n"); //regular input field
                                 }
                             } else { // PK case
                                 if(metaColumn.isAutoIncrement(i))
                                 {
                                     out.write("<input name=\"hidden_"+columnName+"\" type=\"hidden\" id=\"hidden_"+columnName+"\" value=\"${model."+columnName+"}\"/>\n");
                                 }else{
+                                    out.write("<td>" + columnName + "</td>\n"); 
+                                    out.write("<td>\n");
+
                                     out.write("<input name=\""+columnName+"\" type=\"text\" id=\""+columnName+"\" value=\"${model."+columnName+"}\"/>\n");
+                                    out.write("${" + columnName + "_error}\n");
                                     out.write("<input name=\"hidden_"+columnName+"\" type=\"hidden\" id=\"hidden_"+columnName+"\" value=\"${model."+columnName+"}\"/>\n");
                                 }
                             }
                             out.write("</td>\n");
                         }
-                        //}else
-                        //{
-                        //hide PK if it's autoincrement.
-
-                        //}
-                out.write("</tr>\n");
-            }
-            out.write("<tr class=\"odd\">\n");
-            out.write("<td>&nbsp;</td>\n");
-            out.write("<td><input type=\"submit\" name=\"Submit\" value=\"Simpan\">");
-            out.write("<input name=\"Button\" type=\"button\" id=\"Submit\" value=\"Batal\" onClick=\"javascript:history.back(-1);\"></td>\n");
-            out.write("</tr>\n");
-            out.write("</tbody>\n");
-            out.write("</table>\n");
-            out.write("</form></td>\n");
-            out.write("</tr>\n");
-            out.write("</table>\n");
-                out.flush();
-                out.close();                           
+                        out.write("</tr>\n");
+                    }
+                    out.write("<tr class=\"odd\">\n");
+                    out.write("<td>&nbsp;</td>\n");
+                    out.write("<td><input type=\"submit\" name=\"Submit\" value=\"Simpan\">");
+                    out.write("<input name=\"Button\" type=\"button\" id=\"Submit\" value=\"Batal\" onClick=\"javascript:history.back(-1);\"></td>\n");
+                    out.write("</tr>\n");
+                    out.write("</tbody>\n");
+                    out.write("</table>\n");
+                    out.write("</form></td>\n");
+                    out.write("</tr>\n");
+                    out.write("</table>\n");
+                    out.flush();
+                    out.close();    
+                }
 
                 //create viewPage
-                System.out.println("Creating view page " + tableName);
-                fDir = new File("../../web/WEB-INF/views/" + tableName);
-                if(!fDir.exists()) fDir.mkdir();
-                File fView = new File("../../web/WEB-INF/views/" + tableName + "/view_"+ tableName + ".jsp");
-                Writer outView = new FileWriter(fView);                
-                outView.write("<%@ page contentType=\"text/html; charset=UTF-8\" language=\"java\" import=\"java.sql.*,recite18th.library.Db,application.config.Config,recite18th.library.Pagination\" %>");
-                outView.write("<%@ taglib uri=\"http://java.sun.com/jsp/jstl/core\" prefix=\"c\" %>\n");
-                outView.write("<%@ taglib uri=\"http://java.sun.com/jsp/jstl/functions\" prefix=\"fn\" %>\n");
-                outView.write("<% int pagenum = 0; %>\n");
-                //outView.write("<%@ include file=\"/WEB-INF/views/header.jsp\" %>");
-                outView.write("<a href=\"<%=Config.base_url%>index/"+ className + "/input/-1\">Tambah Data</a>\n");
-                outView.write("<table width=\"100%\" id=\"rounded-corner\">\n");
-                outView.write("<thead>\n");
-                //iterate all columns : table header
-                outView.write("  <tr>\n");
-                outView.write("  <th scope=\"col\" class=\"rounded-company\">No.</th>\n");
-                resultSet.beforeFirst();
-                resultSet.next();
+                if(ignoreList.get("view_" + tableName + ".jsp")!=null)
+                {
+                    Logger.getLogger(GenerateForm.class.getName()).log(Level.INFO, "Ignoring creation of view_" + tableName + ".jsp");
+                }else
+                {
+                    System.out.println("Creating view page " + tableName);
+                
+                    fDir = new File("../../web/WEB-INF/views/" + tableName);
+                    if(!fDir.exists()) fDir.mkdir();
+                    File fView = new File("../../web/WEB-INF/views/" + tableName + "/view_"+ tableName + ".jsp");
+                    Writer outView = new FileWriter(fView);                
+                    outView.write("<%@ page contentType=\"text/html; charset=UTF-8\" language=\"java\" import=\"java.sql.*,recite18th.library.Db,application.config.Config,recite18th.library.Pagination\" %>");
+                    outView.write("<%@ taglib uri=\"http://java.sun.com/jsp/jstl/core\" prefix=\"c\" %>\n");
+                    outView.write("<%@ taglib uri=\"http://java.sun.com/jsp/jstl/functions\" prefix=\"fn\" %>\n");
+                    outView.write("<% int pagenum = 0; %>\n");
+                    //outView.write("<%@ include file=\"/WEB-INF/views/header.jsp\" %>");
+                    outView.write("<a href=\"<%=Config.base_url%>index/"+ className + "/input/-1\">Tambah Data</a>\n");
+                    outView.write("<table width=\"100%\" id=\"rounded-corner\">\n");
+                    outView.write("<thead>\n");
+                    //iterate all columns : table header
+                    outView.write("  <tr>\n");
+                    outView.write("  <th scope=\"col\" class=\"rounded-company\">No.</th>\n");
+                    resultSet.beforeFirst();
+                    resultSet.next();
 
                 //get Primary Key Field Name : often use
-                String pkFieldName="";
-                try {
-                    Class params[] = null;
-                    Method objMethod = cl.getMethod("getPkFieldName", params);
-                    pkFieldName = "" + objMethod.invoke(model);
-                } catch (Exception ex) {
-                    Logger.getLogger(Model.class.getName()).log(Level.SEVERE, null, ex);
-                }
-
-                //ALL Lower Case
-                pkFieldName = pkFieldName.toLowerCase();
-
-                //customize column view page
-                for (int i = 1; i <= nColoumn; i++) {
-                    String columnName = metaColumn.getColumnName(i).toLowerCase(); //Caution : ALL LowerCase
-                    String dataType = metaColumn.getColumnClassName(i);       
-                    String thClass = "rounded-q1";
-                    String thTitle = StringUtil.toProperFieldTitle(columnName);
-
-                    if(TableCustomization.getTable(tableName)!=null) // there is customization for this table
-                    {
-                        if(TableCustomization.getTable(tableName).get(columnName)!=null)
-                        {
-                            thTitle = TableCustomization.getTable(tableName).get(columnName) + "";
-                            outView.write("  <th scope=\"col\" class=\"" + thClass + "\">"+thTitle+"</th>\n");
-                        }
-                    }else{ // standard view for this table : hide PK, because mostly is auto increment
-                        if(!metaColumn.isAutoIncrement(i))
-                            outView.write("  <th scope=\"col\" class=\"" + thClass + "\">"+thTitle+"</th>\n");
+                    String pkFieldName="";
+                    try {
+                        Class params[] = null;
+                        Method objMethod = cl.getMethod("getPkFieldName", params);
+                        pkFieldName = "" + objMethod.invoke(model);
+                    } catch (Exception ex) {
+                        Logger.getLogger(Model.class.getName()).log(Level.SEVERE, null, ex);
                     }
-                }
-                outView.write("  <th scope=\"col\" class=\"rounded-q4\">Aksi</th>\n");
-                outView.write("  </tr>\n");
-                outView.write("</thead>\n");
-                outView.write("<tfoot>\n");
-                outView.write("  <tr>\n");
-                outView.write("    <td colspan=\"" + (nColoumn + 1) +"\" class=\"rounded-foot-left\"><%=Pagination.createLinks(pagenum)%></td>\n");
-                outView.write("    <td class=\"rounded-foot-right\">&nbsp;</td>\n");
-                outView.write("  </tr>\n");
-                outView.write("</tfoot>\n");
-
-                outView.write("<tbody>\n");
-                outView.write("  <c:forEach items=\"${row}\" var=\"item\" varStatus=\"status\" >\n");
-                outView.write("    <tr>\n");
-                outView.write("      <td>${status.count}</td>\n");
-                
-                //iterate all columns : table data
-                resultSet.beforeFirst();
-                resultSet.next();
-                for (int i = 1; i <= nColoumn; i++) {
-                    String columnName = metaColumn.getColumnName(i);
-                    //if(!columnName.equals(pkFieldName)) //TOFIX : currently, PK Field is not shown
-                    if(TableCustomization.getTable(tableName)!=null)
-                    {
-                        if(TableCustomization.getTable(tableName).get(columnName)!=null)
-                        {                        
-                            outView.write("      <td>${item."+columnName + "}</td>\n");
-                        }
-                    }else{
-                        if(!metaColumn.isAutoIncrement(i))
-                            outView.write("      <td>${item."+columnName + "}</td>\n");
-                    }
-                      
+                   
+                    //ALL Lower Case
+                    pkFieldName = pkFieldName.toLowerCase();
                     
-                }
+                    //customize column view page
+                    for (int i = 1; i <= nColoumn; i++) {
+                        String columnName = metaColumn.getColumnName(i).toLowerCase(); //Caution : ALL LowerCase
+                        String dataType = metaColumn.getColumnClassName(i);       
+                        String thClass = "rounded-q1";
+                        String thTitle = StringUtil.toProperFieldTitle(columnName);
+                        
+                        if(TableCustomization.getTable(tableName)!=null) // there is customization for this table
+                        {
+                            if(TableCustomization.getTable(tableName).get(columnName)!=null)
+                            {
+                                thTitle = TableCustomization.getTable(tableName).get(columnName) + "";
+                                outView.write("  <th scope=\"col\" class=\"" + thClass + "\">"+thTitle+"</th>\n");
+                            }
+                        }else{ // standard view for this table : hide PK, because mostly is auto increment
+                            if(!metaColumn.isAutoIncrement(i))
+                                outView.write("  <th scope=\"col\" class=\"" + thClass + "\">"+thTitle+"</th>\n");
+                        }
+                    }
+                    
+                    outView.write("  <th scope=\"col\" class=\"rounded-q4\">Aksi</th>\n");
+                    outView.write("  </tr>\n");
+                    outView.write("</thead>\n");
+                    outView.write("<tfoot>\n");
+                    outView.write("  <tr>\n");
+                    outView.write("    <td colspan=\"" + (nColoumn + 1) +"\" class=\"rounded-foot-left\"><%=Pagination.createLinks(pagenum)%></td>\n");
+                    outView.write("    <td class=\"rounded-foot-right\">&nbsp;</td>\n");
+                    outView.write("  </tr>\n");
+                    outView.write("</tfoot>\n");
+                    
+                    outView.write("<tbody>\n");
+                    outView.write("  <c:forEach items=\"${row}\" var=\"item\" varStatus=\"status\" >\n");
+                    outView.write("    <tr>\n");
+                    outView.write("      <td>${status.count}</td>\n");
                 
-                outView.write("      <td>\n");
-                outView.write("         <a href=\"<%=Config.base_url%>index/"+ className + "/input/${item." + pkFieldName + "}\">Ubah</a>\n");
-                outView.write("         <a href=\"<%=Config.base_url%>index/" + className + "/delete/${item."+ pkFieldName +"}\" onClick=\"return confirm('Apakah Anda yakin?');\">Hapus</a>\n");
-                outView.write("      </td>\n");
-
-                outView.write("    </tr>\n");
-                outView.write("  </c:forEach>\n");
-                outView.write("</tbody>\n");
-                outView.write("</table>\n");
-                //outView.write("<%@ include file=\"/WEB-INF/views/footer.jsp\" %>");
-                outView.flush();
-                outView.close();
+                    //iterate all columns : table data
+                    resultSet.beforeFirst();
+                    resultSet.next();
+                    for (int i = 1; i <= nColoumn; i++) {
+                        String columnName = metaColumn.getColumnName(i);
+                        //if(!columnName.equals(pkFieldName)) //TOFIX : currently, PK Field is not shown
+                        if(TableCustomization.getTable(tableName)!=null)
+                        {
+                            if(TableCustomization.getTable(tableName).get(columnName)!=null)
+                            {                        
+                                outView.write("      <td>${item."+columnName + "}</td>\n");
+                            }
+                        }else{
+                            if(!metaColumn.isAutoIncrement(i))
+                                outView.write("      <td>${item."+columnName + "}</td>\n");
+                        }
+                    }
+                
+                    
+                    outView.write("      <td>\n");
+                    outView.write("         <a href=\"<%=Config.base_url%>index/"+ className + "/input/${item." + pkFieldName + "}\">Ubah</a>\n");
+                    outView.write("         <a href=\"<%=Config.base_url%>index/" + className + "/delete/${item."+ pkFieldName +"}\" onClick=\"return confirm('Apakah Anda yakin?');\">Hapus</a>\n");
+                    outView.write("      </td>\n");
+                    
+                    outView.write("    </tr>\n");
+                    outView.write("  </c:forEach>\n");
+                    outView.write("</tbody>\n");
+                    outView.write("</table>\n");
+                    //outView.write("<%@ include file=\"/WEB-INF/views/footer.jsp\" %>");
+                    outView.flush();
+                    outView.close();
+                }
             }
         }catch(Exception e)
         {
             e.printStackTrace();
         }
     }
-
-    //create form page (this should be easy)
 }

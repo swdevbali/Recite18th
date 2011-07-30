@@ -178,10 +178,13 @@ public class Model
 
     public void save(Hashtable params) {
         //null == "" == -1 for database application ;)
-        Logger.getLogger(Model.class.getName()).log(Level.INFO, "save with PK Field = {0}", params.get(pkFieldName));
+        Logger.getLogger(Model.class.getName()).log(Level.INFO, "save with PK Field = {0}", params.get("hidden_" + pkFieldName));
 
         //if (params.get(pkFieldName)!=null && ( pkFieldValue==null || "".equals(pkFieldValue)||"-1".equals(pkFieldValue))) {
-        if (params.get("hidden_"+pkFieldName).equals("-1") || params.get("hidden_"+pkFieldName).equals(""))  {
+        if (params.get("hidden_"+pkFieldName).equals("-1") || params.get("hidden_"+pkFieldName).equals(""))  
+        {
+        //if(params.get("hidden_"+pkFieldName)==null)
+        //{
             //this is fix for MySQL Bugs : http://bugs.mysql.com/bug.php?id=36411, read also http://dev.mysql.com/doc/refman/5.1/en/innodb-auto-increment-handling.html
             //we must use -1 for insert of new pkfield column
             //params.put(pkFieldName,"-1");

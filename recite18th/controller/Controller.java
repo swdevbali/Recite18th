@@ -160,8 +160,13 @@ public class Controller extends HttpServlet {
                 Enumeration e = validation.keys();
                 modelForm = modelForm.createNewModel();
                 while (e.hasMoreElements()) {
+                    //TOFIX : restore PK Field Value and Foreign Field
                     String ruleName = (String) e.nextElement();
                     String value = getFormFieldValue(ruleName);
+                    if(ruleName.equals(modelForm.getPkFieldName()))
+                    {
+                        PropertyUtils.setSimpleProperty(modelForm, "hidden_" + ruleName, value); //TOFIX: For PK Field, we store its old value as hidden
+                    }
                     PropertyUtils.setSimpleProperty(modelForm, ruleName, value);
                     Logger.getLogger(Controller.class.getName()).log(Level.INFO, "validasi error, mengisi kembali " + ruleName + ", dengan value = " + value);
                 }
@@ -247,26 +252,21 @@ public class Controller extends HttpServlet {
             String fieldName;
 
 
+            // NEXT : Rephrase this
             for (int i = 0; i < fields.length; i++) {
                 fieldName = fields[i].getName();
-                //not used, foreign concept is no longer needed, because we only stored to DB what is in ScaffoldClass
-                //denoted by _
-                //only insert if it isn't foreign field
-//                if(!modelForm.isForeignField(fieldName))
-//                {
                 fieldValue = getFormFieldValue(fieldName);
-                //TOFIX : -1 usually been used in foreign key, so if it's don't store it.... This is magic constant!!! Hehe
-                if (fieldValue != null && !fieldValue.equals("-1")) { 
-                    if (fieldName.equals(modelForm.getPkFieldName())) {
-                        modelForm.setPkFieldValue(fieldValue);
-                        //every PK field has it hidden_*** field set. store it in temp
-                        params.put("hidden_" + fieldName, getFormFieldValue("hidden_" + fieldName));
-                    } /*else {*/
-                    Logger.getLogger(Controller.class.getName()).log(Level.INFO, "Putting field form {0} into params", fieldName);                    
-                    params.put(fieldName, fieldValue);
-                        /*}*/
+
+                if (fieldName.equals(modelForm.getPkFieldName())) {
+                    modelForm.setPkFieldValue(getFormFieldValue("hidden_" + fieldName));
+                    params.put("hidden_" + fieldName, getFormFieldValue("hidden_" + fieldName));
+                    Logger.getLogger(Controller.class.getName()).log(Level.INFO, "Putting field primary key from {0} into params", "hidden_" + fieldName);                    
                 }
-//                }
+                
+                if (fieldValue != null) {
+                    params.put(fieldName, fieldValue);                
+                    Logger.getLogger(Controller.class.getName()).log(Level.INFO, "Putting field form {0} into params", fieldName);                    
+                }
             }
             return params;
         } catch (ClassNotFoundException ex) {
@@ -312,6 +312,22 @@ public class Controller extends HttpServlet {
                     if (fieldValue == null || value.equals(fieldValue)) {
                         Logger.getLogger(Controller.class.getName()).log(Level.INFO, "ERROR" + ruleName + ", " + token);
                         request.setAttribute(ruleName + "_error", ruleName + " required");
+                        allPass = false;
+                    }
+                } else if (token.equals("integer_bigger_than_zero")) {
+
+                    int iValue=0;
+                    try {
+                        iValue = Integer.parseInt(fieldValue);
+                    }catch(NumberFormatException nfe)
+                    {
+                        allPass = false;
+                    }
+                    
+                    if(iValue<=0) allPass = false;
+                    if (!allPass) {
+                        Logger.getLogger(Controller.class.getName()).log(Level.INFO, "ERROR" + ruleName + ", " + token);
+                        request.setAttribute(ruleName + "_error", ruleName + " must be non negative");
                         allPass = false;
                     }
                 }
