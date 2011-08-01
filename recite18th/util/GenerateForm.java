@@ -132,7 +132,7 @@ public class GenerateForm
                         // varying field input for type
                         
                         //foreign field, as chooser page view
-                        if(hashFk.get(columnName)!=null)
+                        if(hashFk.get(columnName)!=null)//TODO: what if PK is chooser also?? :) CUrrently I add it manually the hidden_*Pk_nama* field
                         {
                             String fkTableName = hashFk.get(columnName+"_table") + "";
                             String fkColumnName = hashFk.get(columnName) + "";
