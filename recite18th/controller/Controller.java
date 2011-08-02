@@ -87,11 +87,9 @@ public class Controller extends HttpServlet {
             doSave();
             goAfterSave();
         } else {
-            //masukkan nilai yg tadi dimasukkan.. hadeuh...            
-            input("-2");//MAGIC!
+            //restored inputted values
+            input("-2");//TOFIX : somehow, I can not move the -2 case code from input() into this place...
         }
-
-
     }
 
     /**
@@ -154,21 +152,50 @@ public class Controller extends HttpServlet {
 
     public void input(String pkFieldValue) {
         try {
-            if (pkFieldValue.equals("-2")) {
+            if(pkFieldValue.equals("-2"))
+            {
+                //masukkan nilai yg tadi dimasukkan.. hadeuh...            
                 //Drawbacks : semua field harus didefinisikan jenis validasinya. dan itu ga baik. TODO : ubah ke formParams
-                // dan sesuaikan dengan ada/tidaknya fieldnya dari model. Jika ada, baru diset. Jika tidak, berarti kontrol lain,e.g, Submit
+                //dan sesuaikan dengan ada/tidaknya fieldnya dari model. Jika ada, baru diset. Jika tidak, berarti kontrol lain,e.g, Submit
+                //SOLVED! Already use formParams to refill the value
+                
                 Enumeration e = validation.keys();
                 modelForm = modelForm.createNewModel();
                 while (e.hasMoreElements()) {
-                    //TOFIX : restore PK Field Value and Foreign Field
+                    //TOFIX : restore PK Field Value and Foreign Field. 
+                    //SOLVED. PK Field restored by refilled the value using formParams, whilst Foreign Field restored by adding translated value in corresponding model class
                     String ruleName = (String) e.nextElement();
                     String value = getFormFieldValue(ruleName);
-                    PropertyUtils.setSimpleProperty(modelForm, ruleName, value);
-                    Logger.getLogger(Controller.class.getName()).log(Level.INFO, "validasi error, mengisi kembali " + ruleName + ", dengan value = " + value);
+                    try{
+                        PropertyUtils.setSimpleProperty(modelForm, ruleName, value);
+                        Logger.getLogger(Controller.class.getName()).log(Level.INFO, "validasi error, mengisi kembali " + ruleName + ", dengan value = " + value);
+                    } catch(Exception exception)
+                    {
+                        Logger.getLogger(Controller.class.getName()).log(Level.INFO, exception.getMessage());
+                    }
                 }
                 
-                
-            } else if (pkFieldValue == null || pkFieldValue.equals("") || pkFieldValue.equals("-1")) {
+                String key = null,value = null;
+                Iterator it = formParams.entrySet().iterator();
+                while (it.hasNext()) {
+                    Map.Entry pairs = (Map.Entry)it.next();
+                    Logger.getLogger(Controller.class.getName()).log(Level.INFO,pairs.getKey() + " = " + pairs.getValue());
+                    
+                    try{
+                        key = pairs.getKey() + "";
+                        value = pairs.getValue() + "";
+                        if(key.equals("hidden_" + modelForm.getPkFieldName()))
+                        {
+                            PropertyUtils.setSimpleProperty(modelForm, modelForm.getPkFieldName(), value);
+                        }else{
+                            PropertyUtils.setSimpleProperty(modelForm, key, value);
+                        }
+                    }catch(Exception ex)
+                    {
+                        Logger.getLogger(Controller.class.getName()).log(Level.INFO,"prop error = " + key + ", " + value);
+                    }
+                }
+            }else if (pkFieldValue == null || pkFieldValue.equals("") || pkFieldValue.equals("-1")) {
                 Logger.getLogger(Controller.class.getName()).log(Level.INFO, "Buat Model baru");
                 modelForm = modelForm.createNewModel();
             } else {
