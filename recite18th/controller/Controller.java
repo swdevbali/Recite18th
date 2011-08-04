@@ -15,6 +15,11 @@
 
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see http://www.gnu.org/licenses/.
+
+    HISTORY:
+    1) Forgot of when 1st created this file
+    2) August 4, 2011 = about to add reporting feature using iText
+       http://www.geek-tutorials.com/java/itext/servlet_jsp_output_pdf.php0C
 */
 
 package recite18th.controller;
@@ -45,6 +50,10 @@ import org.apache.commons.beanutils.PropertyUtils;
 
 //authorization
 import recite18th.util.LoginUtil;
+
+//reporting
+import com.lowagie.text.pdf.*;
+import com.lowagie.text.*;
 
 public class Controller extends HttpServlet {
 
@@ -368,5 +377,31 @@ public class Controller extends HttpServlet {
 
     public String getFormFieldValue(String fieldName) {
         return isMultipart ? (formParams.get(fieldName) == null ? null : formParams.get(fieldName) + "") : request.getParameter(fieldName);
+    }
+
+    public void print()
+    {
+        response.setContentType("application/pdf"); // Code 1
+        Document document = new Document();
+        try{
+            PdfWriter.getInstance(document, 
+                                  response.getOutputStream()); // Code 2
+            document.open();
+            
+            // Code 3
+            PdfPTable table = new PdfPTable(2);
+            table.addCell("1");
+            table.addCell("2");
+            table.addCell("3");
+            table.addCell("4");
+            table.addCell("5");
+            table.addCell("6");
+            
+            // Code 4
+            document.add(table);
+            document.close(); 
+        }catch(Exception e){
+            e.printStackTrace();
+        }
     }
 }
