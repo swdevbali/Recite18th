@@ -54,7 +54,8 @@ import recite18th.util.LoginUtil;
 //reporting
 import com.lowagie.text.pdf.*;
 import com.lowagie.text.*;
-
+import java.sql.*;
+import recite18th.library.Db;
 public class Controller extends HttpServlet {
 
     protected Model modelForm;
@@ -101,23 +102,51 @@ public class Controller extends HttpServlet {
         }
     }
 
-    /**
-     * Open main view for this controller
-     */
-    public void index() {
+    protected void initSqlViewDataPerPage()
+    {
+        Model model = initModel();
+        if (sqlViewDataPerPage == null) {
+            sqlViewDataPerPage = "select * from " + model.getTableName();
+        }
+    }
+
+    protected Model initModel()
+    {
         Model model;
         if (modelRow == null) {
             model = modelForm;
         } else {
             model = modelRow;
         }
+        return model;
+    }
+    /*
+      Extracted from index() to allow getting default list of model be called from another method, e.g print()
+     */
+    protected List getDefaultListOfModel()
+    {
+        row = null;
+        Model model = initModel();;
+        
         if (model != null) {
-            if (sqlViewDataPerPage == null) {
-                sqlViewDataPerPage = "select * from " + model.getTableName();
-            }
+            initSqlViewDataPerPage();
             row = model.getDataPerPage(sqlViewDataPerPage);
+        }
+        return row;
+    }
+    /**
+     * Open main view for this controller
+     */
+    public void index() {
+        // check whether we need to prepare database model to be displayed
+        row = getDefaultListOfModel();
+        if(row!=null)
+        {
             request.setAttribute("row", row);
         }
+
+        // AUTHORIZATION MODULE : check whether current authorization is enough
+        // TODO : A more flexible approach.
         try {
             if(!isNeedAuthorization)//doesn't need authorization
             {
@@ -388,17 +417,52 @@ public class Controller extends HttpServlet {
                                   response.getOutputStream()); // Code 2
             document.open();
             
-            // Code 3
-            PdfPTable table = new PdfPTable(2);
-            table.addCell("1");
-            table.addCell("2");
-            table.addCell("3");
-            table.addCell("4");
-            table.addCell("5");
-            table.addCell("6");
+            // get data
+            initSqlViewDataPerPage();
+            PreparedStatement pstmt = Db.getCon().prepareStatement(sqlViewDataPerPage, ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_READ_ONLY);
+            ResultSet resultSet = pstmt.executeQuery();
+            ResultSetMetaData metaColumn = resultSet.getMetaData();
+            int nColoumn = metaColumn.getColumnCount();
             
-            // Code 4
-            document.add(table);
+
+//            row = getDefaultListOfModel();
+//            if(row!=null)
+            if(nColoumn>0)
+            {
+                // create table header
+                PdfPTable table = new PdfPTable(nColoumn);
+                PdfPCell cell = new PdfPCell(new Paragraph(controllerName));
+
+                cell.setColspan(nColoumn);
+                table.addCell(cell);
+                for(int i=1; i < nColoumn + 1; i++)
+                {
+                    if(i-1==0) table.addCell("No.");
+                    else
+                    {
+                        table.addCell(metaColumn.getColumnName(i-1));
+                    }
+                }
+                
+                //iterate all columns : table data
+                resultSet.beforeFirst();
+                int row=1;
+                while(resultSet.next())
+                {
+                    System.out.println(row);
+                    cell = new PdfPCell(new Paragraph(row+""));
+                    table.addCell(cell);
+                    for(int i=1; i < nColoumn; i++)
+                    {
+                        table.addCell(resultSet.getObject(i)+"");
+                        System.out.println(resultSet.getObject(i));
+                    }
+                    row++;
+                }
+
+ 
+                document.add(table);
+            }
             document.close(); 
         }catch(Exception e){
             e.printStackTrace();
