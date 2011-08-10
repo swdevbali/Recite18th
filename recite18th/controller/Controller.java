@@ -56,6 +56,7 @@ import com.lowagie.text.pdf.*;
 import com.lowagie.text.*;
 import java.sql.*;
 import recite18th.library.Db;
+import application.config.*;
 public class Controller extends HttpServlet {
 
     protected Model modelForm;
@@ -423,26 +424,42 @@ public class Controller extends HttpServlet {
             ResultSet resultSet = pstmt.executeQuery();
             ResultSetMetaData metaColumn = resultSet.getMetaData();
             int nColoumn = metaColumn.getColumnCount();
-            
 
-//            row = getDefaultListOfModel();
-//            if(row!=null)
             if(nColoumn>0)
             {
+                Model model = initModel();
+                String tableName = model.getTableName();
                 // create table header
-                PdfPTable table = new PdfPTable(nColoumn);
-                PdfPCell cell = new PdfPCell(new Paragraph(controllerName));
+                PdfPTable table;// = new PdfPTable(nColoumn);
+                PdfPCell cell = new PdfPCell(new Paragraph("Daftar " + controllerName));
+
+                Hashtable hashModel = TableCustomization.getTable(model.getTableName());
+                
+                int ncolumnHeader = nColoumn + 1; // +1 because of row. number
+                if(hashModel!=null) ncolumnHeader = Integer.parseInt(""+hashModel.get("columnCount")) + 1;
+                table = new PdfPTable(ncolumnHeader);
 
                 cell.setColspan(nColoumn);
                 table.addCell(cell);
+                table.addCell("No.");
+                
                 for(int i=1; i < nColoumn + 1; i++)
                 {
-                    if(i-1==0) table.addCell("No.");
-                    else
+                    System.out.println("DATA DB = " + metaColumn.getColumnName(i));
+                    
+                    if(hashModel==null)
                     {
-                        table.addCell(metaColumn.getColumnName(i-1));
+                        table.addCell(metaColumn.getColumnName(i));
+                    }else
+                    {
+                        if(hashModel.get(metaColumn.getColumnName(i))!=null)
+                        {
+                            System.out.println("DATA = " + metaColumn.getColumnName(i));
+                            table.addCell(hashModel.get(metaColumn.getColumnName(i))+"");
+                        }
                     }
                 }
+                
                 
                 //iterate all columns : table data
                 resultSet.beforeFirst();
@@ -454,13 +471,22 @@ public class Controller extends HttpServlet {
                     table.addCell(cell);
                     for(int i=1; i < nColoumn; i++)
                     {
-                        table.addCell(resultSet.getObject(i)+"");
-                        System.out.println(resultSet.getObject(i));
+                        System.out.println("DB Column = " + metaColumn.getColumnName(i));
+                        if(hashModel==null)
+                        {
+                            table.addCell(resultSet.getObject(i)+"");
+                        }else
+                        {
+                            if(hashModel.get(metaColumn.getColumnName(i))!=null)
+                            {
+                                System.out.println(metaColumn.getColumnName(i) + ", PDF = " + resultSet.getObject(metaColumn.getColumnName(i))+"");
+                                table.addCell(resultSet.getObject(metaColumn.getColumnName(i))+"");
+                            }
+                        }
                     }
                     row++;
                 }
 
- 
                 document.add(table);
             }
             document.close(); 
