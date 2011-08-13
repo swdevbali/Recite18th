@@ -260,6 +260,7 @@ public class GenerateForm
                     outView.write("<% int pagenum = 0; %>\n");
                     //outView.write("<%@ include file=\"/WEB-INF/views/header.jsp\" %>");
                     outView.write("<a href=\"<%=Config.base_url%>index/"+ className + "/input/-1\">Tambah Data</a>\n");
+                    outView.write("|| <a href=\"<%=Config.base_url%>index/"+ className + "/print\">Cetak</a>\n");
                     outView.write("<table width=\"100%\" id=\"rounded-corner\">\n");
                     outView.write("<thead>\n");
                     //iterate all columns : table header

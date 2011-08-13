@@ -414,9 +414,44 @@ public class Controller extends HttpServlet {
         response.setContentType("application/pdf"); // Code 1
         Document document = new Document();
         try{
-            PdfWriter.getInstance(document, 
+            PdfWriter writer = PdfWriter.getInstance(document, 
                                   response.getOutputStream()); // Code 2
             document.open();
+
+            // various fonts
+            BaseFont bf_helv = BaseFont.createFont(BaseFont.HELVETICA, "Cp1252", false);
+            BaseFont bf_times = BaseFont.createFont(BaseFont.TIMES_ROMAN, "Cp1252", false);
+            BaseFont bf_courier = BaseFont.createFont(BaseFont.COURIER, "Cp1252", false);
+            BaseFont bf_symbol = BaseFont.createFont(BaseFont.SYMBOL, "Cp1252", false);
+
+            String headerImage = Config.base_path + "images/report-logo.gif";
+            String txtHeader = Config.application_title;
+            Image imghead = Image.getInstance(headerImage);
+            imghead.setAbsolutePosition(0, 0);
+            PdfContentByte cbhead = writer.getDirectContent();
+            PdfTemplate tp = cbhead.createTemplate(600, 250);
+            tp.addImage(imghead);
+            tp.beginText(); 
+            tp.setFontAndSize(bf_times, 16); 
+            tp.showText("                      " + txtHeader); 
+            tp.endText(); 
+
+            cbhead.addTemplate(tp, 10, 780);
+            HeaderFooter header = new HeaderFooter(
+                new Phrase(cbhead + txtHeader, new Font(bf_helv)), false);
+            header.setAlignment(Element.ALIGN_CENTER);
+
+            document.setHeader(header);
+
+
+
+            //PdfContentByte cb = writer.getDirectContent();
+            Paragraph par = new Paragraph("\n\n\n\nLaporan " + controllerName + "\n");
+            par.getFont().setStyle(Font.BOLD);
+            par.setAlignment("center");
+            document.add(par);
+            document.add(new Paragraph("\n"));
+            
             
             // get data
             initSqlViewDataPerPage();
@@ -439,7 +474,7 @@ public class Controller extends HttpServlet {
                 if(hashModel!=null) ncolumnHeader = Integer.parseInt(""+hashModel.get("columnCount")) + 1;
                 table = new PdfPTable(ncolumnHeader);
 
-                cell.setColspan(nColoumn);
+                cell.setColspan(ncolumnHeader);
                 table.addCell(cell);
                 table.addCell("No.");
                 
