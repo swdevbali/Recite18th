@@ -293,7 +293,10 @@ public class Controller extends HttpServlet {
                     try {
                         String itemName = item.getName();
                         //TOFIX : kalau FFox, itemName hanya nama file saja. Kalau IE, lengkap dengan nama folder.
-                        String path = Config.base_path + "upload/" + itemName;//TODO : save all to this folder || allow customization
+                        //make sure upload folder exist
+                        File fDir = new File(Config.base_path + "upload");
+                        if(!fDir.exists()) fDir.mkdir();
+                        String path = Config.base_path + "upload" + Config.path_delimiter + itemName;//TODO : save all to this folder || allow customization
                         Logger.getLogger(Controller.class.getName()).log(Level.INFO, "Try to write file " + path);
                         File savedFile = new File(path);
                         item.write(savedFile);
