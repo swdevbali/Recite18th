@@ -199,6 +199,7 @@ public class Controller extends HttpServlet {
                 //SOLVED! Already use formParams to refill the value
                 
                 Enumeration e = validation.keys();
+                Model.session=request.getSession();//store session here
                 modelForm = modelForm.createNewModel();
                 while (e.hasMoreElements()) {
                     //TOFIX : restore PK Field Value and Foreign Field. 
@@ -236,9 +237,11 @@ public class Controller extends HttpServlet {
                 }
             }else if (pkFieldValue == null || pkFieldValue.equals("") || pkFieldValue.equals("-1")) {
                 Logger.getLogger(Controller.class.getName()).log(Level.INFO, "Buat Model baru");
+                Model.session=request.getSession();
                 modelForm = modelForm.createNewModel();
             } else {
                 Logger.getLogger(Controller.class.getName()).log(Level.INFO, "Ambil model dengan ID " + pkFieldValue);
+                Model.session=request.getSession();
                 modelForm = modelForm.getModelById(pkFieldValue);
             }
             
