@@ -609,6 +609,25 @@ public class Controller extends HttpServlet {
                 }
 
                 document.add(table);
+                document.add(new Paragraph("\n\n"));
+                par = new Paragraph("Mengetahui");
+                par.setAlignment("center");
+                document.add(par);
+                par = new Paragraph("Kepada Badan Kepegawaian");
+                par.setAlignment("center");
+                document.add(par);
+                par = new Paragraph("\n\n\n");
+
+                document.add(par);
+                par = new Paragraph("Drs. Maman Permana");
+                par.setAlignment("center");
+                document.add(par);
+                par = new Paragraph("Nip: 197802042006041013");
+                par.setAlignment("center");
+                
+                document.add(par);
+
+
             }
             document.close();
         } catch (Exception e) {
