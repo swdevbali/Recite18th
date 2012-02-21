@@ -438,22 +438,32 @@ public class Controller extends HttpServlet {
             BaseFont bf_symbol = BaseFont.createFont(BaseFont.SYMBOL, "Cp1252", false);
 
             String headerImage = Config.base_path + "images/report-logo.gif";
-            String txtHeader = Config.application_title;
+
             Image imghead = Image.getInstance(headerImage);
             imghead.setAbsolutePosition(0, 0);
             PdfContentByte cbhead = writer.getDirectContent();
-            PdfTemplate tp = cbhead.createTemplate(600, 300);
-            tp.addImage(imghead);
-            tp.beginText();
-            tp.setFontAndSize(bf_times, 16);
-            tp.showText("                      " + txtHeader);
-            tp.endText();
+            PdfTemplate tpLogo = cbhead.createTemplate(600, 300);
+            tpLogo.addImage(imghead);
 
-            PdfTemplate tp2 = cbhead.createTemplate(600, 300);
-            tp2.beginText();
-            tp2.setFontAndSize(bf_times, 16);
-            tp2.showText("                      " + "Alamat : Jln. R. W. Monginsidi No. 01 Kompleks Parasamya Bantul, Telp. (0274) 367509");
-            tp2.endText();
+            PdfTemplate tpTitle = cbhead.createTemplate(1100, 300);
+            String txtHeader = "BADAN KEPEGAWAIAN DAERAH PEMERINTAH DAERAH";//Config.application_title;
+            tpTitle.beginText();
+            tpTitle.setFontAndSize(bf_times, 36);
+            tpTitle.showText(txtHeader);
+            tpTitle.endText();
+
+            PdfTemplate tpTitle2 = cbhead.createTemplate(900, 300);
+            String txtHeader2 = "         KABUPATEN BANTUL YOGYAKARTA";
+            tpTitle2.beginText();
+            tpTitle2.setFontAndSize(bf_times, 36);
+            tpTitle2.showText(txtHeader2);
+            tpTitle2.endText();
+
+            PdfTemplate tpAlamat = cbhead.createTemplate(1000, 400);
+            tpAlamat.beginText();
+            tpAlamat.setFontAndSize(bf_times, 24);
+            tpAlamat.showText("Alamat : Jln. R. W. Monginsidi No. 01 Kompleks Parasamya Bantul, Telp. (0274) 367509");
+            tpAlamat.endText();
 
 
             DateFormat df = new SimpleDateFormat("dd MMM yyyy");
@@ -466,9 +476,12 @@ public class Controller extends HttpServlet {
             tp3.endText();
 
 
-            cbhead.addTemplate(tp, 900, 1600);
-            cbhead.addTemplate(tp2, 900, 1580);
-            cbhead.addTemplate(tp3, 270, 1500);
+            cbhead.addTemplate(tpLogo, 800, 1500);//logo
+            cbhead.addTemplate(tpTitle, 1000, 1580);
+            cbhead.addTemplate(tpTitle2, 1000, 1540);
+            cbhead.addTemplate(tpAlamat, 1000, 1500);//alamat
+            cbhead.addTemplate(tp3, 270, 1500);//tanggal
+
             HeaderFooter header = new HeaderFooter(
                     new Phrase(cbhead + "", new Font(bf_helv)), false);
             header.setAlignment(Element.ALIGN_CENTER);
@@ -478,11 +491,12 @@ public class Controller extends HttpServlet {
 
 
             //PdfContentByte cb = writer.getDirectContent();
-            Paragraph par = new Paragraph("\n\n\n\n\n\n\n\nLaporan Data " + controllerName + "\n");
+            Paragraph par = new Paragraph("\n\n\n\n\n\n\nLAPORAN DATA SELURUH " + controllerName.toUpperCase() + "\n");
             par.getFont().setStyle(Font.BOLD);
+            par.getFont().setSize(18);
             par.setAlignment("center");
             document.add(par);
-            document.add(new Paragraph("\n"));
+            document.add(new Paragraph("\n\n"));
 
 
             // get data
@@ -530,7 +544,7 @@ public class Controller extends HttpServlet {
                         table.addCell(cellCol);
                     }
                 } else {
-                    for (int i = 1; i < ncolumnHeader ; i++) {
+                    for (int i = 1; i < ncolumnHeader; i++) {
                         System.out.println("DATA = " + metaColumn.getColumnName(i));
                         PdfPCell cellCol = new PdfPCell(new Paragraph(metaColumn.getColumnName(i) + ""));
                         cellCol.setHorizontalAlignment(Element.ALIGN_CENTER);

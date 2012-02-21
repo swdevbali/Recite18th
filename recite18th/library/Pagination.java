@@ -102,6 +102,8 @@ public class Pagination {
             theoutput += "<a href=\"?pagenum=" + numpage + "\">" + lastlink + "</a>";
         }
 
+        /* not working now */
+        theoutput="";
         return theoutput;
     }
 }
