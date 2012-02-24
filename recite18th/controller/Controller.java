@@ -393,6 +393,14 @@ public class Controller extends HttpServlet {
                         request.setAttribute(ruleName + "_error", ruleName + " required");
                         allPass = false;
                     }
+                } else if (token.contains("len==")) {
+                    StringTokenizer st2 = new StringTokenizer(token, "len==");
+                    String value = st2.nextToken();
+                    if (fieldValue != null && fieldValue.length() != Integer.parseInt(value)) {
+                        Logger.getLogger(Controller.class.getName()).log(Level.INFO, "ERROR" + ruleName + ", " + token);
+                        request.setAttribute(ruleName + "_error", ruleName + " harus memiliki panjang " + value);
+                        allPass = false;
+                    }
                 } else if (token.equals("integer_bigger_than_zero")) {
 
                     int iValue = 0;
@@ -420,11 +428,15 @@ public class Controller extends HttpServlet {
         return isMultipart ? (formParams.get(fieldName) == null ? null : formParams.get(fieldName) + "") : request.getParameter(fieldName);
     }
 
-    public void print() {
+    public void print(String action) {
         /** thanks to http://www.java2s.com/Code/Java/PDF-RTF/DemonstratesthecreatingPDFinportraitlandscape.htm
          * QUICK FIX : do landscape
          */
         response.setContentType("application/pdf"); // Code 1
+        if (action.equals("download")) {
+            response.setHeader("Content-Transfer-Encoding", "binary");
+            response.setHeader("Content-Disposition", "attachment; filename=\"" + "Report " + controllerName + ".pdf\"");
+        }
         Document document = new Document(PageSize.A1.rotate());
         try {
             PdfWriter writer = PdfWriter.getInstance(document,
@@ -521,11 +533,7 @@ public class Controller extends HttpServlet {
                     ncolumnHeader = Integer.parseInt("" + hashModel.get("columnCount")) + 1;
                 }
                 table = new PdfPTable(ncolumnHeader);
-                //float[] widths = {0.1f, 0.1f, 0.05f, 0.75f,0.75f,0.75f,0.75f,0.75f,0.75f,0.75f,0.75f,0.75f,0.75f,0.75f,0.75f,0.75f,0.75f,0.75f};
-                //table.setWidths(widths);
-                //table.setWidthPercentage(30);
                 cell.setColspan(ncolumnHeader);
-
                 table.addCell("No.");
 
                 if (hashModel != null) {
@@ -538,38 +546,24 @@ public class Controller extends HttpServlet {
                         PdfPCell cellCol = new PdfPCell(new Paragraph(hashModel.get(key) + ""));
                         cellCol.setNoWrap(true);
                         cellCol.setMinimumHeight(50);
-
                         cellCol.setHorizontalAlignment(Element.ALIGN_CENTER);
+                        
 
                         table.addCell(cellCol);
                     }
                 } else {
                     for (int i = 1; i < ncolumnHeader; i++) {
                         System.out.println("DATA = " + metaColumn.getColumnName(i));
-                        PdfPCell cellCol = new PdfPCell(new Paragraph(metaColumn.getColumnName(i) + ""));
+                        Paragraph p1 = new Paragraph(metaColumn.getColumnName(i) + "");
+                        p1.getFont().setSize(20);
+                        PdfPCell cellCol = new PdfPCell(p1);
                         cellCol.setHorizontalAlignment(Element.ALIGN_CENTER);
                         table.addCell(cellCol);
                     }
                 }
 
-//                for (int i = 1; i < ncolumnHeader+1; i++) {
-//                    System.out.println("DATA DB = " + metaColumn.getColumnName(i));
-//
-//                    if (hashModel == null) {
-//                        table.addCell(metaColumn.getColumnName(i));
-//                    } else {
-//                        if (hashModel.get(i) != null) {
-//                            System.out.println("DATA = " + metaColumn.getColumnName(i));
-//                            PdfPCell cellCol = new PdfPCell(new Paragraph(hashModel.get(metaColumn.getColumnName(i)) + ""));
-//                            cellCol.setHorizontalAlignment(Element.ALIGN_CENTER);
-//
-//                            table.addCell(cellCol);
-//
-//                        }
-//                    }
-//                }
 
-
+                
                 //iterate all columns : table data
                 resultSet.beforeFirst();
                 int row = 1;
@@ -589,22 +583,14 @@ public class Controller extends HttpServlet {
                     } else {
                         for (int i = 1; i < ncolumnHeader; i++) {
                             System.out.println("DATA = " + metaColumn.getColumnName(i));
-                            PdfPCell cellCol = new PdfPCell(new Paragraph(resultSet.getObject(metaColumn.getColumnName(i)) + ""));
+                            Paragraph p1 = new Paragraph(resultSet.getObject(metaColumn.getColumnName(i)) + "");
+                            p1.getFont().setSize(18);
+                            PdfPCell cellCol = new PdfPCell(p1);
                             cellCol.setHorizontalAlignment(Element.ALIGN_CENTER);
                             table.addCell(cellCol);
                         }
                     }
-//                    for (int i = 1; i < nColoumn; i++) {
-//                        System.out.println("DB Column = " + metaColumn.getColumnName(i));
-//                        if (hashModel == null) {
-//                            table.addCell(resultSet.getObject(i) + "");
-//                        } else {
-//                            if (hashModel.get(metaColumn.getColumnName(i)) != null) {
-//                                System.out.println(metaColumn.getColumnName(i) + ", PDF = " + resultSet.getObject(metaColumn.getColumnName(i)) + "");
-//                                table.addCell(resultSet.getObject(metaColumn.getColumnName(i)) + "");
-//                            }
-//                        }
-//                    }
+
                     row++;
                 }
 
@@ -618,13 +604,14 @@ public class Controller extends HttpServlet {
                 document.add(par);
                 par = new Paragraph("\n\n\n");
 
+
                 document.add(par);
                 par = new Paragraph("Drs. Maman Permana");
                 par.setAlignment("center");
                 document.add(par);
                 par = new Paragraph("Nip: 197802042006041013");
                 par.setAlignment("center");
-                
+
                 document.add(par);
 
 
