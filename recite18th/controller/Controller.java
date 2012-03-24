@@ -78,6 +78,7 @@ public class Controller extends HttpServlet {
     protected List row = new ArrayList();
     protected String controllerName;
     protected String sqlViewDataPerPage;
+    protected String sqlViewDataPerPageForReport;
     boolean isMultipart;
     //authorization things...
     protected boolean isNeedAuthorization = false;//default controller is free
@@ -513,7 +514,10 @@ public class Controller extends HttpServlet {
 
             // get data
             initSqlViewDataPerPage();
-            PreparedStatement pstmt = Db.getCon().prepareStatement(sqlViewDataPerPage, ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_READ_ONLY);
+            if (sqlViewDataPerPageForReport == null) {
+                sqlViewDataPerPageForReport = sqlViewDataPerPage;
+            }
+            PreparedStatement pstmt = Db.getCon().prepareStatement(sqlViewDataPerPageForReport, ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_READ_ONLY);
             ResultSet resultSet = pstmt.executeQuery();
             ResultSetMetaData metaColumn = resultSet.getMetaData();
             int nColoumn = metaColumn.getColumnCount();
@@ -534,7 +538,15 @@ public class Controller extends HttpServlet {
                 }
                 table = new PdfPTable(ncolumnHeader);
                 cell.setColspan(ncolumnHeader);
-                table.addCell("No.");
+                cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+
+                Paragraph p2 = new Paragraph("No.");
+                p2.getFont().setSize(20);
+                PdfPCell cellColNo = new PdfPCell(p2);
+                cellColNo.setNoWrap(true);
+                cellColNo.setMinimumHeight(50);
+                cellColNo.setHorizontalAlignment(Element.ALIGN_CENTER);
+                table.addCell(cellColNo);
 
                 if (hashModel != null) {
                     Enumeration k = hashModel.keys();
@@ -547,7 +559,7 @@ public class Controller extends HttpServlet {
                         cellCol.setNoWrap(true);
                         cellCol.setMinimumHeight(50);
                         cellCol.setHorizontalAlignment(Element.ALIGN_CENTER);
-                        
+
 
                         table.addCell(cellCol);
                     }
@@ -563,13 +575,16 @@ public class Controller extends HttpServlet {
                 }
 
 
-                
+
                 //iterate all columns : table data
                 resultSet.beforeFirst();
                 int row = 1;
                 while (resultSet.next()) {
                     System.out.println(row);
-                    cell = new PdfPCell(new Paragraph(row + ""));
+                    Paragraph p3 = new Paragraph(row + "");
+                    p3.getFont().setSize(20);
+                    cell = new PdfPCell(p3);
+                    cell.setHorizontalAlignment(Element.ALIGN_CENTER);
                     table.addCell(cell);
                     if (hashModel != null) {//skip dulu u/ kasus ga pny class kustomasi table
                         Enumeration k = hashModel.keys();
